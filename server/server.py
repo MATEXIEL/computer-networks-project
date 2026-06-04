@@ -3,38 +3,53 @@ server.py
 ---------
 NetProbe sunucusu 
 sadece UDP soketini acip gelen paketleri dinler.
+gelen paketi acip (parse_packet) icindekileri okur ve
+checksum dogru mu kontrol eder
 
 """
 
 import socket
 from common import config
-
-
+from common.packet import parse_packet, TYPE_DATA
+ 
+ 
 def start_server():
-    # 1) UDP soketi olustur.
-    #    AF_INET = IPv4 adres ailesi
-    #    SOCK_DGRAM = UDP (TCP olsaydi SOCK_STREAM olurdu)
+    # UDP soketi olustur
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    # 2) Soketi adrese BAGLA (bind): "ben bu IP ve port'u dinliyorum" de.
-    #    config.py'den geliyor: 127.0.0.1 ve 9999
     sock.bind((config.SERVER_IP, config.SERVER_PORT))
-
+ 
+    # 1 saniyelik timeout: soket her saniye "uyanir", boylece Ctrl+C
+    # bekleme sirasinda da yakalanabilir (Windows'ta takilmayi onler).
+    sock.settimeout(1.0)
+ 
     print(f"[SUNUCU] Dinlemede: {config.SERVER_IP}:{config.SERVER_PORT}")
     print("[SUNUCU] Paket bekleniyor... (durdurmak icin Ctrl+C)")
-
-    # 3) Sonsuz dongu: gelen paketleri bekle.
+ 
     while True:
-        # recvfrom: bir paket gelene kadar bekler.
-        #   data    = gelen ham byte verisi
-        #   addr    = paketi gonderen istemcinin adresi (IP, port)
-        # Parametre 65535 = bir seferde alinabilecek maksimum byte.
-        data, addr = sock.recvfrom(65535)
-        print(f"[SUNUCU] {addr} adresinden {len(data)} byte geldi.")
-
-
+        try:
+            data, addr = sock.recvfrom(65535)
+        except socket.timeout:
+            # Bu saniye icinde paket gelmedi; donguyu basa al, Ctrl+C kontrol edilsin.
+            continue
+ 
+        # Gelen ham byte'i acip okunabilir hale getir
+        pkt = parse_packet(data)
+ 
+        # Veri paketi mi, ACK mi? (su an sadece veri bekliyoruz)
+        if pkt["type"] == TYPE_DATA:
+            if pkt["is_valid"]:
+                # Checksum tuttu -> veri saglam
+                print(f"[SUNUCU] SAGLAM paket alindi | seq={pkt['seq_num']} "
+                      f"| toplam={pkt['total_packets']} "
+                      f"| veri='{pkt['payload'].decode(errors='replace')}'")
+            else:
+                # Checksum tutmadi -> veri bozuk, paketi atiyoruz (ACK de gondermeyecegiz)
+                print(f"[SUNUCU] BOZUK paket atildi | seq={pkt['seq_num']}")
+        else:
+            print(f"[SUNUCU] Beklenmeyen paket tipi: {pkt['type']}")
+ 
+ 
 if __name__ == "__main__":
-    # Ctrl+C ile temiz cikis icin try/except
     try:
         start_server()
     except KeyboardInterrupt:
