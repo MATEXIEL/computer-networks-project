@@ -25,7 +25,8 @@ def start_server():
     print(f"[SUNUCU] Dinlemede: {config.SERVER_IP}:{config.SERVER_PORT}")
     print("[SUNUCU] Paket bekleniyor... (durdurmak icin Ctrl+C)")
 
-    
+       # Daha once alinan sira numaralarini burada tutulur duplicate kontrol yapmak icin
+    alinan_seqler = set() 
  
     while True:
         try:
@@ -40,14 +41,24 @@ def start_server():
         # Veri paketi mi, ACK mi? (su an sadece veri bekliyoruz)
         if pkt["type"] == TYPE_DATA:
             if pkt["is_valid"]:
-                # Checksum tuttu -> veri saglam
-                print(f"[SUNUCU] SAGLAM paket alindi | seq={pkt['seq_num']} "
-                      f"| toplam={pkt['total_packets']} "
-                      f"| veri='{pkt['payload'].decode(errors='replace')}'")
-                # ACK uret ve paketi gonderen adrese (addr) geri yolla
-                ack = create_ack_packet(pkt["seq_num"])
+                seq = pkt["seq_num"]
+
+                if seq in alinan_seqler:
+                    # DUPLICATE: bu paketi daha once aldik.
+                    # Veriyi TEKRAR KAYDETMEYECEGIZ, ama ACK'i yine de gondeririz
+                    # (cunku istemcinin onceki ACK'i kaybolmus olabilir).
+                    print(f"[SUNUCU] DUPLICATE paket (yok sayildi) | seq={seq}")
+                else:
+                    # ILK KEZ gelen saglam paket
+                    alinan_seqler.add(seq)
+                    print(f"[SUNUCU] YENI paket alindi | seq={seq} "
+                          f"| toplam={pkt['total_packets']} "
+                          f"| veri='{pkt['payload'].decode(errors='replace')}'")
+
+                # Duplicate de olsa, yeni de olsa: HER ZAMAN ACK gonder
+                ack = create_ack_packet(seq)
                 sock.sendto(ack, addr)
-                print(f"[SUNUCU] ACK gonderildi | seq={pkt['seq_num']}")
+                print(f"[SUNUCU] ACK gonderildi | seq={seq}")
             else:
                 # Checksum tutmadi -> veri bozuk, paketi atiyoruz (ACK de gondermeyecegiz)
                 print(f"[SUNUCU] BOZUK paket atildi | seq={pkt['seq_num']}")
