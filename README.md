@@ -1,3 +1,5 @@
+GitHub Repo Linki: https://github.com/MATEXIEL/computer-networks-project
+
 # UDP Üzerinde Güvenilir Veri Aktarımı (Stop-and-Wait ARQ)
 
 Bu proje, güvensiz bir taşıma katmanı protokolü olan UDP üzerinde, uygulama katmanında çeşitli hata kontrol mekanizmaları kurarak güvenilir bir dosya transfer sistemi (Reliable Data Transfer) sağlamayı amaçlamaktadır. 
@@ -14,13 +16,13 @@ Bu proje, güvensiz bir taşıma katmanı protokolü olan UDP üzerinde, uygulam
 * Analiz: Farklı paket boyutları, kayıp oranları ve zaman aşımı süreleri altında Throughput/Goodput analizi.
 
 ## Nasıl Çalıştırılır?
-Sistemi uçtan uca test etmek için iki ayrı terminal penceresi açılmalıdır.
 
-1. Sunucuyu Başlatmak:
-python -m server.server
+Sistemi test etmek ve aktarım metriklerini gözlemlemek için:
 
-2. İstemciyi Başlatmak (Dosya Aktarımı):
-python -m client.client
+### Tam Otomatik Deney Senaryoları
+Proje föyünde istenen tüm senaryoları (farklı paket boyutları, timeout değerleri, yapay kayıp oranları ve dosya boyutları) gerçek zamanlı soketler üzerinden otomatik olarak koşturmak ve analiz grafiklerini üretmek için tek bir komut yeterlidir:
 
-3. Analiz ve Grafikleri Üretmek (Aktarım Bittikten Sonra):
+```bash
 python -m analysis.visualizer
+```
+(Not: Bu otomasyon betiği; sunucu ve istemci süreçlerini arka planda sırasıyla kendisi başlatır, ağ testlerini fiziksel olarak yapar ve işi bitince süreçleri güvenlice kapatır. Üretilen performans grafikleri graphs/ klasörüne kaydedilir.)
