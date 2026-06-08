@@ -19,7 +19,7 @@ PAYLOAD_SIZE = 1024
 # --- Guvenilirlik ayarlari ---
 # Istemci bir ACK'i ne kadar sure bekleyecek
 # Bu sure dolar da ACK gelmezse paket "kayip" sayilir ve tekrar gonderilir.
-# Deneylerde "timeout etkisi" senaryosu icin bu degeri degistireleckecek
+# Deneylerde "timeout etkisi" senaryosu icin bu degiskenin farkli degerleri icin testler olacak
 TIMEOUT = 1.0
 
 # Bir paket en fazla kac kez tekrar gonderilecek
